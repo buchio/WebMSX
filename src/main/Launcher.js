@@ -30,41 +30,16 @@ WMSX.start = function (machinePowerOn) {
         // Prepare ROM Database
         wmsx.ROMDatabase.uncompress();
 
-        // Init KeepAlive
-        wmsx.NetClient.initKeepAlive();
-
-        // NetPlay! auto-join Session?
-        var joinSession = WMSX.NETPLAY_JOIN;
-
-        // Auto-load BIOS, Expansions, State, Cartridges, Disks and Tape files if specified and downloadable
-        if (!joinSession && WMSX.STATE_URL) {
-            // Machine State loading, Machine will Auto Power on
-            new wmsx.MultiDownloader(
-                [{ url: WMSX.STATE_URL }],
-                function onAllSuccess(urls) {
-                    WMSX.room.start(function() {
-                        WMSX.room.fileLoader.loadFromContent(urls[0].url, urls[0].content, wmsx.FileLoader.OPEN_TYPE.STATE, 0, false);
-                    });
-                }
-            ).start();      // Asynchronous
-        } else {
-            // Normal media loading. Power Machine on only after all files are loaded and inserted, then join Session if needed
-            var slotURLs = wmsx.Configurator.slotURLSpecs();
-            var extensionsURLs = wmsx.Configurator.extensionsInitialURLSpecs();
-            var mediaURLs = joinSession ? [] : wmsx.Configurator.mediaURLSpecs();       // Skip media loading if joining Session
-            new wmsx.MultiDownloader(
-                slotURLs.concat(mediaURLs).concat(extensionsURLs),
-                function onAllSuccess() {
-                    WMSX.room.start(joinSession
-                        ? function() { WMSX.room.getNetClient().joinSession(joinSession, WMSX.NETPLAY_NICK); }
-                        : undefined
-                    );
-                },
-                function onAnyError(url) {
-                    wmsx.Util.message(url.errorMessage);
-                }
-            ).start();      // Asynchronous if there are media to load, otherwise Synchronous
-        }
+        var slotURLs = wmsx.Configurator.slotURLSpecs();
+        var extensionsURLs = wmsx.Configurator.extensionsInitialURLSpecs();
+        var mediaURLs = wmsx.Configurator.mediaURLSpecs();
+        new wmsx.MultiDownloader(
+            slotURLs.concat(mediaURLs).concat(extensionsURLs),
+            function onAllSuccess() {WMSX.room.start(undefined);},
+            function onAnyError(url) {
+                wmsx.Util.message(url.errorMessage);
+            }
+        ).start();      // Asynchronous if there are media to load, otherwise Synchronous
 
     });
 
